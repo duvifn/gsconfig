@@ -877,6 +877,42 @@ class ModifyingTests(unittest.TestCase):
         self.cat.delete(store, purge=True, recurse=True)
         self.cat._cache.clear()
 
+    def testImageMosaicParameters(self):
+        # testing the mosaic creation
+        name = 'c_mosaic'
+        data = open('test/data/mosaic/cea.zip', 'rb')
+        self.cat.create_imagemosaic(name, data)
+
+        # get the resource back
+        self.cat._cache.clear()
+        resource = self.cat.get_resource(name)
+
+        self.assert_(resource is not None)
+
+        # get parameters
+        parameters = resource.parameters
+        self.assert_(isinstance(parameters, list))
+
+        def find_parameter_index(parameters, param_name):
+            indexes = [index for index in range(len(parameters)) if parameters[index][0]["value"] == param_name]
+            if len(indexes) > 0:
+                return indexes[0]
+            return None
+
+        # update parameters, save, and fetch to see if updated
+        idx = find_parameter_index(parameters, "SUGGESTED_TILE_SIZE")
+        parameters[idx][1]["value"] = "256,256"
+        resource.parameters = parameters
+        self.cat.save(resource)
+
+
+         # get the resource back
+        self.cat._cache.clear()
+        resource = self.cat.get_resource(name)
+        parameters = resource.parameters
+        idx = find_parameter_index(parameters, "SUGGESTED_TILE_SIZE")
+        self.assert_(parameters[idx][1]["value"] == "256,256")
+
     def testTimeDimension(self):
         sf = self.cat.get_workspace("sf")
         files = shapefile_and_friends(os.path.join(gisdata.GOOD_DATA, "time", "boxes_with_end_date"))

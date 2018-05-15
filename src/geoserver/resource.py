@@ -8,8 +8,8 @@ __author__ = "David Winslow"
 __copyright__ = "Copyright 2012-2015 Boundless, Copyright 2010-2012 OpenPlans"
 __license__ = "MIT"
 
-from geoserver.support import ResourceInfo, DimensionInfo, xml_property, write_string, bbox, metadata, \
-    write_metadata, write_bbox, string_list, write_string_list, attribute_list, write_bool, url
+from geoserver.support import ResourceInfo, DimensionInfo, xml_property, write_string, bbox, metadata, coverage_parameters_list, \
+    write_metadata, write_bbox, string_list, write_string_list, attribute_list, write_bool, url, write_coverage_parameters_list
 
 def md_link(node):
     """Extract a metadata link tuple from an xml node"""
@@ -202,6 +202,7 @@ class Coverage(_ResourceBase):
     supported_formats = xml_property("supportedFormats", string_list)
     metadata_links = xml_property("metadataLinks", metadata_link_list)
     metadata = xml_property("metadata", metadata)
+    parameters = xml_property("parameters", coverage_parameters_list)
 
     writers = dict(
                 title = write_string("title"),
@@ -217,7 +218,8 @@ class Coverage(_ResourceBase):
                 requestSRS = write_string_list("requestSRS"),
                 responseSRS = write_string_list("responseSRS"),
                 supportedFormats = write_string_list("supportedFormats"),
-                metadata = write_metadata("metadata")
+                metadata = write_metadata("metadata"),
+                parameters = write_coverage_parameters_list("parameters")
             )
 
 class WmsLayer(ResourceInfo):

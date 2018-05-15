@@ -168,6 +168,22 @@ def write_metadata(name):
         builder.end(name)
     return write
 
+def write_coverage_parameters_list(name):
+    def write(builder, parameters):
+        builder.start(name, dict())
+        for parameter in parameters:
+            builder.start("entry", dict())
+            for elem in parameter:
+                child_type = elem["type"]
+                if child_type in parameter_types:
+                    func = parameter_types[child_type]["write"]
+                else:
+                    func = parameter_types["string"]["write"]
+                func(builder, elem)
+            builder.end("entry")
+        builder.end(name)
+    return write
+
 class ResourceInfo(object):
     def __init__(self):
         self.dom = None
@@ -559,6 +575,88 @@ def metadata(node):
     if node is not None:
         return dict(md_entry(n) for n in node.findall("entry"))
 
+def read_parameter_string(node):
+    return {
+        "type" : "string",
+        "value" : node.text if node.text is not None else ''
+    }
+
+def write_parameter_string(builder, elem):
+    builder.start(elem["type"], dict())
+    builder.data(elem["value"])
+    builder.end(elem["type"])
+
+def read_parameter_bool(node):
+    return {
+        "type" : "boolean",
+        "value" : True if node.text and node.text != "false" else False
+    }
+
+def write_parameter_bool(builder, elem):
+    builder.start(elem["type"], dict())
+    builder.data("true" if elem["value"] else "false")
+    builder.end(elem["type"])
+
+def read_parameter_int(node):
+    return {
+        "type" : "int",
+        "value" : int(node.text) if node.text is not None else 0
+    }
+
+def write_parameter_int(builder, elem):
+    builder.start(elem["type"], dict())
+    builder.data(str(elem["value"]))
+    builder.end(elem["type"])
+
+def read_parameter_null(node):
+    return {
+        "type" : "null",
+        "value" : None
+    }
+
+def write_parameter_null(builder, elem):
+    builder.start(elem["type"], dict())
+    builder.end(elem["type"])
+
+parameter_types = {
+    "string" : {
+        "read" : read_parameter_string,
+        "write" : write_parameter_string
+    },
+
+    "boolean" : {
+        "read" : read_parameter_bool,
+        "write" : write_parameter_bool
+    },
+    
+    "int" : {
+        "read" : read_parameter_int,
+        "write" : write_parameter_int
+    },
+
+    "null": {
+        "read" : read_parameter_null,
+        "write" : write_parameter_null
+    }
+}
+
+def parameter_entry(node):
+    """Extract parameter entries from an xml node"""
+    result = []
+    children = node.findall("*")
+    for child in children:
+        child_type = child.tag
+        if child_type in parameter_types:
+            func = parameter_types[child_type]["read"]
+        else:
+            func = parameter_types["string"]["read"]
+        result.append(func(child))
+    return result 
+
+def coverage_parameters_list(node):
+    if node is not None:
+        return [parameter_entry(n) for n in node.findall("entry")]
+        
 def _decode_list(data):
     rv = []
     for item in data:
